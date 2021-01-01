@@ -9,11 +9,14 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 )
+
+const startAutoTypingAfter = 20
 
 // This is a silly go application that will echo out the characters of a file in a well known location that matches up with the first argument. This is intended as a joke to help people learn how to program.
 // It does this by using a shadow directory under "typewriter". Any files you try to "write" will use these files as a source. Banging on the keyboard at random will echo the file to the terminal and ding when done so you, the presenter know when people have "completed" the file ;)
-func main()  {
+func main() {
 	flag.Parse()
 	fileLocation := flag.Arg(0)
 	if len(fileLocation) == 0 {
@@ -35,7 +38,7 @@ tw [OUTPUT_FILE_PATH]`)
 		log.Fatalf("unable to create folders for OUTPUT_FILE: %s", outputFileDir)
 	}
 
-	dstFile, err := os.OpenFile(fileLocation, os.O_CREATE | os.O_WRONLY | os.O_TRUNC, 0644)
+	dstFile, err := os.OpenFile(fileLocation, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Fatalf("oops! the file %s isn't writeable", fileLocation)
 	}
@@ -53,13 +56,20 @@ tw [OUTPUT_FILE_PATH]`)
 
 		_, err = os.Stdout.WriteString("[Start typing below]\r\n")
 
+		charactersTyped := 0
+
 		in := bufio.NewReader(os.Stdin)
 		src := bufio.NewReader(sourceFile)
 		for {
 			var srcChar rune
-			_, _, err = in.ReadRune()
-			if err != nil {
-				log.Println("unable to read from stdin")
+			if charactersTyped < startAutoTypingAfter {
+				_, _, err = in.ReadRune()
+				if err != nil {
+					log.Println("unable to read from stdin")
+				}
+				charactersTyped++
+			} else {
+				time.Sleep(40 * time.Millisecond)
 			}
 			srcChar, _, err = src.ReadRune()
 			if err != nil {
